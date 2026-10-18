@@ -51,7 +51,7 @@ export function Journey() {
  useEffect(()=>{if(!DEMO_ENABLED)return;const running=store.projects.filter(p=>p.status==='running');if(!running.length)return;const timer=setTimeout(()=>{running.forEach(p=>{const next=p.tasks.find(t=>t.status==='pending');if(next)commit({type:'tick',id:p.id,taskId:next.id});});},2200);return()=>clearTimeout(timer);},[store.projects]);
  useEffect(()=>{if(!isPlaying||!project)return;const shots=project.tasks.filter(t=>['shot','image'].includes(t.kind)&&t.status==='done');if(!shots.length)return;const timer=setInterval(()=>setSelectedShot(prev=>{const index=shots.findIndex(s=>s.id===prev);if(index===shots.length-1){setIsPlaying(false);return prev;}return shots[index+1]?.id||shots[0].id;}),1800);return()=>clearInterval(timer);},[isPlaying,project?.id,project?.status]);
  const edit=(brief,patch={})=>commit({type:'edit',id:project.id,brief,patch});
- function openProject(p){commit({type:'open',id:p.id});go(`project/${p.id}`);}
+ function openProject(p){let hasEdit=Boolean(p.template);try{hasEdit=hasEdit||Boolean(localStorage.getItem(`open-haggsfield-studio-v2-${p.id}`));}catch{}commit({type:'open',id:p.id});go(`${hasEdit?'editor':'project'}/${p.id}`);}
  function create(prefill={}){const p=newProject(crypto.randomUUID(),Date.now(),prefill);commit({type:'create',project:p});go(`project/${p.id}`);}
  function duplicate(p){create({...p.brief,title:`${p.brief.title} — new cut`});}
  function nextStep(){if(project.step===0&&(!project.brief.title.trim()||project.brief.idea.trim().length<12)){setError('Give your project a name and describe the idea in at least 12 characters.');return;}if(project.step===2){commit({type:'plan',id:project.id});}else edit({}, {step:project.step+1});window.scrollTo(0,0);}
