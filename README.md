@@ -6,6 +6,12 @@ An independent React/Vite/Express studio with MiniMax H3 through Comfy Cloud. Ge
 
 **Pre-release:** real MiniMax generation, private delivery, comparison, replacement, undo, private cloud save/restore and browser movie export have been exercised with an isolated test account. Demonstration: https://open-haggsfield.vercel.app. Customer generation remains gated while paid billing is completed. A MiniMax success does not verify the separate Higgsfield Seedance/Cinema integrations.
 
+## Try it without an account
+
+Open https://open-haggsfield.vercel.app/#/try for a fresh, editable 30-second practice project. It uses illustrative stills, separate titles and real editing tools; it makes no provider requests. Creator templates build a 15/30-second creator/product reel or a 30/60-second cinematic sizzle from your own references.
+
+Watch the 96-second walkthrough at https://open-haggsfield.vercel.app/#/contest. It combines real app captures with existing WAYLIGHT film excerpts, not a continuous screen recording. The separately hosted film is not part of this source license.
+
 ## Features
 
 - Scene/shot organization, searchable bins, alternate takes and multitrack editing.
@@ -33,6 +39,14 @@ For hosted storage, follow `supabase/README.md` with your own project. Set DATAB
 
 Standalone hosting: `npm run build`, then `npm start`. Vercel routing is in `vercel.json`; link your own project and set APP_ORIGIN to its HTTPS origin. Hosted runtime requires Postgres and private Supabase storage, rather than local SQLite.
 
+## Official Comfy SDK
+
+New studio jobs use `@comfyorg/sdk/low` (0.5.x), the official Comfy API v2 client. We intentionally use its no-retry transport for paid submissions, with a persisted token as Idempotency-Key and a persisted job receipt. Duplicate-key or network-uncertain outcomes require reconciliation, never a fresh automatic submission. Customer credentials remain per client at a fixed Cloud origin. Existing jobs without a transport marker retain legacy read/download compatibility.
+
+The SDK read and bounded download were checked against an actual completed job and matched the original MP4 bytes. New SDK submissions have automated contract tests, but have not made a paid live submission. Historical paid MiniMax production used the previous direct Cloud transport. Workflows are under `workflows/comfy/`; the studio downloads exact API graphs without generating. Camera presets add visible prompt text, not native camera guarantees.
+
+Reference: https://docs.comfy.org/development/api-development/sdks
+
 ## Generation and billing setup
 
 Create a studio account and retain its recovery code. Connect your Comfy API key from Account & keys. Comfy provider charges are separate from studio membership. The implementation requires an active membership for billable generation/cloud uploads. Local editing and recovery of existing private media remain available without one.
@@ -53,7 +67,7 @@ npm run test:postgres
 npm run check:launch
 ```
 
-The current suite has 92 passing tests, including PostgreSQL fixtures, provider ownership, deduplication, quotes/reservations, billing fixtures and cloud revision/recovery checks. Tests use mocked providers and do not spend generation credits. `check:launch` deliberately reports pre-release blockers; configuration presence is not external verification.
+The current suite has 98 passing tests, including PostgreSQL fixtures, provider ownership, deduplication, quotes/reservations, billing fixtures and cloud revision/recovery checks. Tests use mocked providers and do not spend generation credits. `check:launch` deliberately reports pre-release blockers; configuration presence is not external verification.
 
 ## Boundaries
 

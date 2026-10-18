@@ -1,7 +1,21 @@
+import {ComfyLow} from '@comfyorg/sdk/low';
 // Server-only transport. Not enabled for customer billing until a workflow is verified.
 // Contract: https://docs.comfy.org/openapi-cloud.yaml
-export function createComfyClient({apiKey,fetchImpl=fetch}={}) {
- if(!apiKey)throw Error('Comfy API key is not configured.');
+export function createComfyClient({apiKey,fetchImpl=fetch,transport='legacy'}={}) {
+ if(typeof apiKey!=='string'||!apiKey.trim())throw Error('Comfy API key is not configured.');
+ // Official SDK low-level surface intentionally has no orchestration retries.
+ // Fixed origin prevents COMFY_BASE_URL from redirecting customer credentials.
+ const sdk=new ComfyLow('https://cloud.comfy.org',apiKey,{clientInfo:'open-haggsfield',fetch:async(url,init)=>{
+  const target=new URL(url);if(target.origin!=='https://cloud.comfy.org')throw Error('Untrusted Comfy destination');
+  const response=await fetchImpl(url,{...init,redirect:'manual',signal:init?.signal||AbortSignal.timeout(30000)});
+  if([301,302,303,307,308].includes(response.status)){
+   const signed=new URL(response.headers.get('location'));
+   if(init?.method!=='GET'||!target.pathname.startsWith('/api/v2/assets/')||signed.protocol!=='https:'||signed.hostname!=='storage.googleapis.com'||signed.port||signed.username||signed.password)throw Error('Untrusted Comfy redirect');
+   await response.body?.cancel();return fetchImpl(signed.href,{redirect:'error',signal:AbortSignal.timeout(60000)});
+  }
+  return response;
+ }});
+ async function sdkRequest(action,submission=false){try{return await action();}catch(e){throw Object.assign(Error(submission?'Comfy submission not confirmed. Check the original job; do not resubmit.':'Comfy SDK request unavailable.'),{outcome:submission&&e.httpStatus>=400&&e.httpStatus<500&&e.code!=='idempotency_key_reuse'?'rejected':submission?'unknown':'unavailable'});}}
  async function request(path,body){
   let response;
   try{response=await fetchImpl(`https://cloud.comfy.org${path}`,{method:body?'POST':'GET',headers:{'X-API-Key':apiKey,...(body?{'Content-Type':'application/json'}:{})},...(body?{body:JSON.stringify(body)}:{}),signal:AbortSignal.timeout(30000),redirect:'error'});}
@@ -31,7 +45,8 @@ export function createComfyClient({apiKey,fetchImpl=fetch}={}) {
    const item=candidates[0],query=new URLSearchParams({filename:item.filename,subfolder:item.subfolder||'',type:'output'});
    let response;
    try{
-    response=await fetchImpl(`https://cloud.comfy.org/api/view?${query}`,{headers:{'X-API-Key':apiKey},signal:AbortSignal.timeout(60000),redirect:'manual'});
+    if(transport==='sdk-v2')response=await sdkRequest(()=>sdk.getAssetContent(item.assetId,{signal:AbortSignal.timeout(60000)}));
+    else response=await fetchImpl(`https://cloud.comfy.org/api/view?${query}`,{headers:{'X-API-Key':apiKey},signal:AbortSignal.timeout(60000),redirect:'manual'});
     if([301,302,303,307,308].includes(response.status)){
      const target=new URL(response.headers.get('location'));
      if(target.protocol!=='https:'||target.hostname!=='storage.googleapis.com'||target.port||target.username||target.password)throw Error('Untrusted media destination');
@@ -53,17 +68,30 @@ export function createComfyClient({apiKey,fetchImpl=fetch}={}) {
    return {bytes,mime:mp4?'video/mp4':'video/webm',extension:mp4?'mp4':'webm',requestId,outputNode,mediaVerified:false};
   },
   async checkConnection(){await request('/api/prompt');return {connected:true};},
-  async submit({workflow,confirmBillable=false}){
+  async submit({workflow,confirmBillable=false,token}){
    if(!confirmBillable)throw Error('Explicit billable confirmation is required.');
    if(!workflow||typeof workflow!=='object'||Array.isArray(workflow)||!Object.keys(workflow).length)throw Error('A validated API-format workflow is required.');
+   if(transport==='sdk-v2'){
+    if(typeof token!=='string'||!/^[-a-zA-Z0-9]{16,100}$/.test(token))throw Object.assign(Error('A stable request token is required.'),{outcome:'rejected'});
+    const job=await sdkRequest(()=>sdk.postJobs(workflow,{idempotencyKey:token,extraData:{api_key_comfy_org:apiKey}}),true);
+    if(typeof job.id!=='string'||!/^[-a-zA-Z0-9]{1,100}$/.test(job.id))throw Object.assign(Error('Comfy returned no usable job receipt.'),{outcome:'unknown'});
+    return {requestId:job.id,status:'queued'};
+   }
    // Partner nodes consume a hidden execution credential separately from the
    // Cloud transport header. Never put it in the graph, journal, or client UI.
    const result=await request('/api/prompt',{prompt:workflow,extra_data:{api_key_comfy_org:apiKey}});
    if(typeof result.prompt_id!=='string'||!result.prompt_id||Object.keys(result.node_errors||{}).length)throw Object.assign(Error('Comfy did not confirm a usable job. Reconcile before resubmitting.'),{outcome:'unknown'});
    return {requestId:result.prompt_id,status:'queued'};
   },
-  async status(requestId){
+  async status(requestId,{includeWorkflow=false}={}){
    if(!/^[a-zA-Z0-9-]{1,100}$/.test(requestId))throw Error('Invalid Comfy job identifier.');
+   if(transport==='sdk-v2'){
+    const result=await sdkRequest(()=>sdk.getJob(requestId));
+    const states={queued:'queued',running:'in_progress',canceling:'in_progress',succeeded:'completed',failed:'failed',canceled:'canceled',expired:'failed'};
+    const executed=includeWorkflow?await sdkRequest(()=>sdk.getJobWorkflow(requestId)):null;
+    const outputs={};for(const o of result.outputs||[]){if(['video','image','file'].includes(o.type)&&typeof o.name==='string'&&/\.(mp4|webm)$/i.test(o.name)&&typeof o.id==='string'&&/^[-a-zA-Z0-9]{1,100}$/.test(o.id)){(outputs[o.node_id]??={videos:[]}).videos.push({filename:o.name,type:'output',assetId:o.id});}}
+    return {...(executed?.format==='api'?{workflow:executed.workflow}:{}),requestId:result.id,status:states[result.status]||'unknown',outputs,mediaVerified:false,...(['failed','canceled','expired'].includes(result.status)?{error:'Comfy generation ended without a usable video. Check provider usage before any separately authorized retry.'}:{})};
+   }
    const result=await request(`/api/jobs/${requestId}`);
    const states={pending:'queued',in_progress:'in_progress',completed:'completed',failed:'failed',cancelled:'canceled'};
    // Outputs are provider file descriptors, not public video URLs. A separate

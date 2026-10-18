@@ -58,9 +58,9 @@ export function mountComfy(app,{db,vault,storage,locked,env,clientFactory=create
    if(!await db.prepare('SELECT id FROM projects WHERE id=? AND user_id=?').get(b.projectId,user.id))throw fail('Project not found.',404);
    const q=await db.prepare('SELECT * FROM generation_quotes WHERE id=? AND user_id=? AND fingerprint=? AND expires>?').get(b.quoteId||'',user.id,fp,now);
    if(!q||q.credits!==comfyEstimate(recipe))throw fail('Get a fresh quote before generating.',409);
-   await db.prepare('INSERT INTO jobs(id,user_id,project_id,token,fingerprint,input,endpoint,status,created,updated,funding) VALUES (?,?,?,?,?,?,?,?,?,?,?)').run(id,user.id,b.projectId,b.token,fp,JSON.stringify({prompt:b.prompt,duration:recipe.duration,recipe,estimatedCents:q.credits}),endpoint,'submitting',now,now,'byok');
+   await db.prepare('INSERT INTO jobs(id,user_id,project_id,token,fingerprint,input,endpoint,status,created,updated,funding) VALUES (?,?,?,?,?,?,?,?,?,?,?)').run(id,user.id,b.projectId,b.token,fp,JSON.stringify({prompt:b.prompt,duration:recipe.duration,recipe,transport:'sdk-v2',estimatedCents:q.credits}),endpoint,'submitting',now,now,'byok');
   });
-  try{const result=await clientFactory({apiKey:key}).submit({workflow:recipe.workflow,confirmBillable:true});await db.prepare('UPDATE jobs SET status=?,request_id=?,updated=? WHERE id=?').run(result.status,result.requestId,Date.now(),id);}
+  try{const result=await clientFactory({apiKey:key,transport:'sdk-v2'}).submit({workflow:recipe.workflow,confirmBillable:true,token:b.token});await db.prepare('UPDATE jobs SET status=?,request_id=?,updated=? WHERE id=?').run(result.status,result.requestId,Date.now(),id);}
   catch(e){await db.prepare('UPDATE jobs SET status=?,error=?,updated=? WHERE id=?').run(e.outcome==='rejected'?'rejected':'unknown','Submission not confirmed. Check Comfy; do not submit another request.',Date.now(),id);}
   const j=await db.prepare('SELECT id,status FROM jobs WHERE id=?').get(id);res.status(202).json(j);
  }));
@@ -68,7 +68,7 @@ export function mountComfy(app,{db,vault,storage,locked,env,clientFactory=create
   j=await db.prepare('SELECT * FROM jobs WHERE id=?').get(j.id);if(!j||!['queued','in_progress','unknown'].includes(j.status)||!j.request_id)return;
   const key=await credential({id:j.user_id});if(!key)return;
   try{
-   const client=clientFactory({apiKey:key}),result=await client.status(j.request_id);
+   const client=clientFactory({apiKey:key,transport:JSON.parse(j.input).transport||'legacy'}),result=await client.status(j.request_id);
    if(result.status!=='completed'){await db.prepare('UPDATE jobs SET status=?,error=?,updated=? WHERE id=?').run(result.status,result.error||null,Date.now(),j.id);return;}
    if(!storage)throw Error('Storage unavailable');
    await locked('media:'+j.user_id,async()=>{
@@ -94,7 +94,7 @@ export function mountComfy(app,{db,vault,storage,locked,env,clientFactory=create
   if(typeof requestId!=='string'||!/^[-a-zA-Z0-9]{1,100}$/.test(requestId))throw fail('Enter the original Comfy job ID.');
   if(await db.prepare('SELECT id FROM jobs WHERE request_id=? AND endpoint=?').get(requestId,endpoint))throw fail('This Comfy job is already linked.',409);
   const key=await credential(req.user);if(!key)throw fail('The original Comfy key is required.');
-  const result=await clientFactory({apiKey:key}).status(requestId),expected=JSON.parse(j.input).recipe.workflow;
+  const result=await clientFactory({apiKey:key,transport:JSON.parse(j.input).transport||'legacy'}).status(requestId,{includeWorkflow:true}),expected=JSON.parse(j.input).recipe.workflow;
   const canonical=w=>JSON.stringify(Object.entries(w||{}).sort(([a],[b])=>a.localeCompare(b)).map(([id,n])=>[id,n.class_type,Object.entries(n.inputs||{}).sort(([a],[b])=>a.localeCompare(b))]));
   if(result.requestId!==requestId||canonical(result.workflow)!==canonical(expected))throw fail('Comfy did not confirm the original workflow. Support must reconcile this job.',409);
   await db.prepare("UPDATE jobs SET request_id=?,status='queued',error=NULL,updated=? WHERE id=?").run(requestId,Date.now(),j.id);
