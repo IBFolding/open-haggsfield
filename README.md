@@ -67,7 +67,7 @@ npm run test:postgres
 npm run check:launch
 ```
 
-The current suite has 98 passing tests, including PostgreSQL fixtures, provider ownership, deduplication, quotes/reservations, billing fixtures and cloud revision/recovery checks. Tests use mocked providers and do not spend generation credits. `check:launch` deliberately reports pre-release blockers; configuration presence is not external verification.
+The current suite has 99 passing tests, including PostgreSQL fixtures, provider ownership, deduplication, quotes/reservations, billing fixtures and cloud revision/recovery checks. Tests use mocked providers and do not spend generation credits. `check:launch` deliberately reports pre-release blockers; configuration presence is not external verification.
 
 ## Boundaries
 

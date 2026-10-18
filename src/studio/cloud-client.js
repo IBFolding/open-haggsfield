@@ -1,5 +1,5 @@
 import {studioApi as api,jsonPost} from '../studio-api.js';
-import {restoreMedia,saveMedia} from '../media-store.js';
+import {restoreMedia,saveMedia,mediaBlob} from '../media-store.js';
 import {snapshot} from './sequence.js';
 export async function saveCloud(project,doc,onProgress){
  const {user,cloudReady}=await api('/account');if(!user)throw Error('Sign in from Account & keys first.');if(!cloudReady)throw Error('Cloud storage is not configured. Your local edit remains saved.');
@@ -11,7 +11,7 @@ export async function saveCloud(project,doc,onProgress){
   if(!mapped.has(a.mediaId)){
    const originalId=a.mediaId;
    const pending=(async()=>{
-    let file=files.get(originalId);if(!file&&a.url){const r=await fetch(a.url);if(!r.ok)throw Error(`Relink ${a.name} before cloud save.`);file=await r.blob();}if(!file)throw Error(`Relink ${a.name} before cloud save.`);
+    let file=files.get(originalId);if(!file&&a.url){file=await mediaBlob(a.url);}if(!file)throw Error(`Relink ${a.name} before cloud save.`);
     if(file.size>50*1024*1024)throw Error(`${a.name} exceeds the 50 MB cloud file limit.`);
     const digest=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',await file.arrayBuffer()))).map(x=>x.toString(16).padStart(2,'0')).join('');
     const media=await mediaApi('/media/prepare',jsonPost({sourceId:'sha256-'+digest,mime:file.type,bytes:file.size}));

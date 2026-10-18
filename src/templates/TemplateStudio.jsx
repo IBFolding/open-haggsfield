@@ -1,6 +1,6 @@
 import {useState} from 'react';
 import {BRAND_KEY,initialBrief,hooks,recipe,assemble,isSizzle,looks} from './recipe.js';
-import {saveMedia} from '../media-store.js';
+import {saveMedia,mediaBlob} from '../media-store.js';
 import {saveStudio} from '../studio/storage.js';
 import {titleCard} from './title-card.js';
 import './templates.css';
@@ -13,7 +13,7 @@ export function TemplateStudio({onCreate}){
  function choose(template){setB(v=>({...v,template,format:template==='cinematic-sizzle'?'16:9':'9:16',duration:template==='cinematic-sizzle'?60:15,cta:template==='cinematic-sizzle'?'Coming soon':'Shop now',hook:0}));setStep(0);setError('');}
  async function upload(e){const files=Array.from(e.target.files||[]);e.target.value='';setBusy(true);setError('');try{const added=[];for(const f of files.slice(0,6-refs.length)){if(!['image/png','image/jpeg','image/webp'].includes(f.type)||f.size>10*1024*1024)throw Error('Use JPG, PNG or WebP under 10 MB.');const image=await createImageBitmap(f),c=document.createElement('canvas'),scale=Math.min(1,1200/Math.max(image.width,image.height));c.width=image.width*scale;c.height=image.height*scale;c.getContext('2d').drawImage(image,0,0,c.width,c.height);image.close();added.push({id:crypto.randomUUID(),name:f.name,url:c.toDataURL('image/jpeg',.86)});}setRefs(r=>[...r,...added]);}catch(e){setError(e.message);}finally{setBusy(false);}}
  function next(){try{recipe(b);if(!refs.length)throw Error('Add at least one original image to build your first cut.');setError('');setStep(1);}catch(e){setError(e.message);}}
- async function build(){setBusy(true);setError('');try{const {project,studio}=assemble(b,refs,recipe(b).map(beat=>titleCard(b,beat.text)));for(const asset of studio.assets){const blob=await (await fetch(asset.url)).blob();await saveMedia(asset.mediaId,blob);asset.url=null;}saveStudio(studio);onCreate(project);}catch(e){setError(e.message);}finally{setBusy(false);}}
+ async function build(){setBusy(true);setError('');try{const {project,studio}=assemble(b,refs,recipe(b).map(beat=>titleCard(b,beat.text)));for(const asset of studio.assets){const blob=await mediaBlob(asset.url);await saveMedia(asset.mediaId,blob);asset.url=null;}saveStudio(studio);onCreate(project);}catch(e){setError(e.message);}finally{setBusy(false);}}
  return <main className="tpl-page">
   <div className="tpl-heading"><div><p className="tpl-eyebrow">FROM REFERENCES TO THE FINAL CUT</p><h1>Give your story a structure.</h1><p>Choose a recipe. Bring your look. Keep control of every shot.</p></div><span className="tpl-pill">EDIT FIRST · GENERATE WHEN READY</span></div>
   <div className="tpl-recipes" role="group" aria-label="Choose a creator recipe">

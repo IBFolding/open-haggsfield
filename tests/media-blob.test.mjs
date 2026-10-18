@@ -1,0 +1,3 @@
+import test from 'node:test';import assert from 'node:assert/strict';
+import {mediaBlob} from '../src/media-store.js';
+test('embedded title/reference bytes decode without a CSP-blocked network request',async()=>{const original=globalThis.fetch;let calls=0;globalThis.fetch=async()=>{calls++;throw Error('CSP blocked');};try{const b=await mediaBlob('data:image/png;base64,AQIDBA==');assert.equal(b.type,'image/png');assert.deepEqual([...new Uint8Array(await b.arrayBuffer())],[1,2,3,4]);assert.equal(calls,0);await assert.rejects(mediaBlob('data:text/html;base64,AQID'),/Unsupported/);await assert.rejects(mediaBlob('data:image/png;base64,%%%'),/Unsupported/);assert.equal(calls,0);}finally{globalThis.fetch=original;}});
