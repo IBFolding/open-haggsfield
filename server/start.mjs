@@ -1,0 +1,12 @@
+import express from 'express';
+import {fileURLToPath} from 'node:url';
+import {runtime} from './runtime.mjs';
+process.umask(0o077);
+const port=Number(process.env.PORT||4192),studio=await runtime(`http://127.0.0.1:${port}`),app=express();
+app.use((req,res,next)=>{res.setHeader('Content-Security-Policy',"default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://*.supabase.co; frame-ancestors 'none'; base-uri 'self'; form-action 'self' https://checkout.stripe.com");next();});
+app.use(studio.app);
+app.use('/api',(_req,res)=>res.status(404).json({error:'Not found.'}));
+const root=fileURLToPath(new URL('../dist/client/',import.meta.url));app.use(express.static(root,{dotfiles:'deny'}));app.get('/{*path}',(req,res)=>req.path.split('/').some(p=>p.startsWith('.'))?res.status(404).end():res.sendFile('index.html',{root,dotfiles:'allow'}));
+app.use((_err,_req,res,_next)=>res.status(404).json({error:'Not found.'}));
+const server=app.listen(port,process.env.HOST||'127.0.0.1',()=>console.log(`Studio server listening on port ${port}`));
+for(const event of ['SIGTERM','SIGINT'])process.on(event,()=>server.close(async()=>{await studio.close();process.exit(0);}));

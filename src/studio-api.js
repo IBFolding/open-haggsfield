@@ -1,0 +1,2 @@
+export async function studioApi(path,options={}){const r=await fetch('/api/studio'+path,{...options,headers:{'Content-Type':'application/json'},credentials:'same-origin',cache:'no-store'});let data;try{data=await r.json();}catch{throw Error('Studio backend is unavailable.');}if(!r.ok)throw Object.assign(Error(data.error||'The request failed.'),{http:r.status});return data;}
+export function jsonPost(value){return {method:'POST',body:JSON.stringify(value)};}

@@ -1,0 +1,10 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {exportPlan} from '../src/movie-export.js';
+import {editReducer,total} from '../src/editor.js';
+const clip={id:'original',assetId:'a',kind:'video',name:'Original',in:2,out:8,sourceDuration:10,take:1};
+const state={version:1,clips:[clip],past:[],future:[]};
+const action={type:'replaceMedia',id:'original',from:1,to:3,fingerprint:JSON.stringify(clip),newId:'new',media:{assetId:'b',kind:'video',name:'Fix',sourceDuration:5}};
+test('real replacement preserves surrounding footage, sequence length and undo',()=>{const s=editReducer(state,action);assert.equal(total(s.clips),6);assert.deepEqual(s.clips.map(c=>[c.assetId,c.in,c.out]),[['a',2,3],['b',0,2],['a',5,8]]);assert.deepEqual(editReducer(s,{type:'undo'}).clips,state.clips);});
+test('replacement rejects short footage, invalid range and stale edits',()=>{assert.throws(()=>editReducer(state,{...action,media:{...action.media,sourceDuration:1}}));assert.throws(()=>editReducer(state,{...action,to:NaN}));assert.throws(()=>editReducer(state,{...action,fingerprint:'stale'}));});
+test('export requires available footage and refuses simulated repairs',()=>{assert.throws(()=>exportPlan([clip]),/Relink/);assert.throws(()=>exportPlan([{...clip,simulated:true}],{a:'blob:a'}),/demo repairs/);assert.equal(exportPlan([clip],{a:'blob:a'})[0].src,'blob:a');assert.throws(()=>exportPlan([]),/Add footage/);});

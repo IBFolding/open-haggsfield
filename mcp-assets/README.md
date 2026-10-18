@@ -1,0 +1,1 @@
+Place private PNG/JPEG/WebP references here for local MCP attachment. Maximum 1 MB each. This directory's media is Git-ignored and excluded from deployment. Do not commit provider credentials or private production material.

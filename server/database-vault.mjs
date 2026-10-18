@@ -1,0 +1,6 @@
+import {randomBytes,createCipheriv,createDecipheriv} from 'node:crypto';
+export function databaseVault(db,masterKey){const key=Buffer.from(masterKey||'','base64');if(key.length!==32)throw Error('Database vault requires a 32-byte server encryption key.');const valid=id=>{if(!/^[a-f0-9]{64}$/.test(id))throw Error('Invalid vault identity.');};return {
+ async save(id,value){valid(id);const iv=randomBytes(12),c=createCipheriv('aes-256-gcm',key,iv);c.setAAD(Buffer.from(id));const cipher=Buffer.concat([c.update(value,'utf8'),c.final()]);const encrypted=Buffer.concat([iv,c.getAuthTag(),cipher]);await db.prepare('INSERT INTO provider_keys(vault_id,encrypted,updated) VALUES (?,?,?) ON CONFLICT(vault_id) DO UPDATE SET encrypted=excluded.encrypted,updated=excluded.updated').run(id,encrypted,Date.now());},
+ async get(id){valid(id);const row=await db.prepare('SELECT encrypted FROM provider_keys WHERE vault_id=?').get(id);if(!row)return null;const bytes=Buffer.from(row.encrypted),d=createDecipheriv('aes-256-gcm',key,bytes.subarray(0,12));d.setAAD(Buffer.from(id));d.setAuthTag(bytes.subarray(12,28));return Buffer.concat([d.update(bytes.subarray(28)),d.final()]).toString('utf8');},
+ async remove(id){valid(id);await db.prepare('DELETE FROM provider_keys WHERE vault_id=?').run(id);}
+ };}

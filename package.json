@@ -1,0 +1,48 @@
+{
+  "name": "app",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build && node scripts/prepare-sites-build.mjs",
+    "preview": "vite preview",
+    "test:sites": "node --test tests/sites-worker.test.mjs",
+    "generate:seedance": "tsx index.ts",
+    "check:server": "tsc -p tsconfig.server.json",
+    "test:seedance": "tsx --test tests/seedance.test.ts",
+    "mcp": "node server/mcp.mjs",
+    "start": "node server/start.mjs",
+    "test:studio": "node --test tests/studio.test.mjs",
+    "check:launch": "node scripts/check-readiness.mjs --strict",
+    "test": "node --test tests/*.test.mjs && npm run test:seedance",
+    "test:postgres": "node --test tests/postgres.test.mjs",
+    "migrate:supabase": "node scripts/migrate-supabase.mjs",
+    "pretest": "npm run build"
+  },
+  "dependencies": {
+    "@fontsource/inter": "^5.3.0",
+    "@higgsfield/client": "^0.2.6",
+    "@modelcontextprotocol/sdk": "^1.32.1",
+    "@phosphor-icons/react": "^2.1.10",
+    "@supabase/supabase-js": "^2.117.2",
+    "@vitejs/plugin-react": "5.0.4",
+    "dotenv": "^18.0.4",
+    "express": "^5.2.1",
+    "postgres": "^3.4.9",
+    "react": "19.2.0",
+    "react-dom": "19.2.0",
+    "stripe": "^22.6.2",
+    "vite": "^6.4.3",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "^0.5.8",
+    "@types/node": "^26.6.3",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2"
+  },
+  "engines": {
+    "node": ">=22.13.0"
+  }
+}
