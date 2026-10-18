@@ -6,6 +6,12 @@ export function inspectWorkflow(workflow,catalog){
   const required={...schema.input?.required},optional={...schema.input?.optional};
   const expand=(fields,prefix='')=>{for(const [key,spec]of Object.entries(fields||{})){
    const name=prefix+key;
+   if(spec[0]==='COMFY_AUTOGROW_V3'){
+    delete required[name];delete optional[name];
+    const template=spec[1]?.template,child=Object.values(template?.input?.required||{})[0];
+    if(template?.names&&child){for(const slot of template.names)optional[name+'.'+slot]=child;const count=template.names.filter(slot=>name+'.'+slot in node.inputs).length;if(count<(template.min||0))errors.push(`${id}: too few inputs for ${name}`);}
+    else warnings.push(`${id}: unvalidated growable input ${name}`);
+   }
    if(spec[0]==='COMFY_DYNAMICCOMBO_V3'){
     const selected=spec[1]?.options?.find(x=>x.key===node.inputs[name]);
     if(selected)for(const section of ['required','optional']){

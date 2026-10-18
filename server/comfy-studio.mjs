@@ -10,12 +10,13 @@ const identity=u=>hash('comfy:'+u.id);
 const entitled=u=>u.billing==='active'&&!u.billing_hold&&u.access_until>Date.now();
 // Conservative estimate from Comfy's Oct 17 catalog. Operator must enable only
 // after checking current pricing. BYOK is charged by Comfy; no platform credits.
-export function comfyEstimate(recipe){const rate=recipe.model==='MiniMax H3'?{'768P':.1287,'2K':.1859}[recipe.resolution]:recipe.model==='MiniMax H3 Max'?{'480P':.0715,'768P':.1144}[recipe.resolution]:{'480P':.03575,'768P':.0572}[recipe.resolution];return Math.ceil(rate*recipe.duration*100);}
+import{comfyEstimate}from'../workflows/comfy/pricing.mjs';
+export{comfyEstimate};
 export function mountComfy(app,{db,vault,storage,locked,env,clientFactory=createComfyClient}){
  const enabled=()=>env.COMFY_GENERATION_ENABLED==='true'&&Boolean(storage);
  const credential=async user=>{const value=await vault.get(identity(user));return value?.startsWith('comfy:')?value.slice(6):null;};
  const inFlight=async user=>await db.prepare(`SELECT id FROM jobs WHERE user_id=? AND status IN ${active} LIMIT 1`).get(user.id);
- const recipeFor=b=>{try{return minimaxTake({prompt:b.prompt,seconds:b.duration,model:b.model,resolution:b.resolution,ratio:b.ratio,seed:b.seed,firstFrame:b.firstFrame});}catch(e){throw fail(e.message);}};
+ const recipeFor=b=>{try{return minimaxTake({prompt:b.prompt,seconds:b.duration,model:b.model,resolution:b.resolution,ratio:b.ratio,seed:b.seed,firstFrame:b.firstFrame,lastFrame:b.lastFrame,referenceImages:b.referenceImages,referenceDetail:b.referenceDetail,promptExpansion:b.promptExpansion,mode:b.mode});}catch(e){throw fail(e.message);}};
  const fingerprint=(projectId,recipe)=>hash(JSON.stringify({projectId,recipe}));
  const owned=async(req)=>{const j=await db.prepare('SELECT * FROM jobs WHERE id=? AND user_id=? AND endpoint=?').get(req.params.id,req.user.id,endpoint);if(!j)throw fail('Job not found.',404);return j;};
  app.get('/api/studio/comfy/connection',async(req,res)=>res.json({connected:Boolean(await credential(req.user)),enabled:enabled(),membership:entitled(req.user),funding:'byok',pricingAsOf:'2026-10-17'}));

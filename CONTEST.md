@@ -25,3 +25,7 @@ The demo combines actual captured app views with excerpts from the user's WAYLIG
 Registration/final submission receipts and the required published social URL are not present. A post is prepared with #OpenSourceHiggsfield, pending the owner's platform/account. Final submission terms require action-time confirmation. This file is not a submission receipt.
 
 Target: Best Overall / innovative editing workflow and MiniMax bonus consideration. This partner route is not Open Weights Only eligible. No fine-tuning, masked inpainting, native camera control, automatic subject tracking or frame-accurate mastering is claimed.
+
+## Revision update
+
+The hosted demo now offers a separate 60-second WAYLIGHT recut and the product walkthrough. New reference, first/last and last-frame continuation workflows can be downloaded with staged images without paying or signing in. Catalog and automated checks do not imply a successful new paid SDK submission. WAYLIGHT media remains separate from the MIT code license.

@@ -45,6 +45,14 @@ New studio jobs use `@comfyorg/sdk/low` (0.5.x), the official Comfy API v2 clien
 
 The SDK read and bounded download were checked against an actual completed job and matched the original MP4 bytes. New SDK submissions have automated contract tests, but have not made a paid live submission. Historical paid MiniMax production used the previous direct Cloud transport. Workflows are under `workflows/comfy/`; the studio downloads exact API graphs without generating. Camera presets add visible prompt text, not native camera guarantees.
 
+### Reference-driven revisions
+
+The studio supports text, first-image, first/last-frame and multi-reference modes. MiniMax H3 and H3 Max accept up to nine ordered reference images; H3 Turbo does not support reference mode. H3 Max quotes include conservative reference-token estimates and selected detail. Changing references or settings invalidates the quote.
+
+Download a ZIP with the actual workflow and staged image bytes before signing in. Continue captures the selected clip's last usable frame locally and uses image-to-video; it does not condition on the full video or audio. Write requested changes and constraints explicitly. Originals remain available for comparison and range replacement.
+
+All 11 supported model/mode combinations passed authenticated live catalog validation. New first/last and multi-reference paid submissions remain unverified. These are not masked inpainting or automatic identity guarantees.
+
 Reference: https://docs.comfy.org/development/api-development/sdks
 
 ## Generation and billing setup
@@ -67,7 +75,7 @@ npm run test:postgres
 npm run check:launch
 ```
 
-The current suite has 99 passing tests, including PostgreSQL fixtures, provider ownership, deduplication, quotes/reservations, billing fixtures and cloud revision/recovery checks. Tests use mocked providers and do not spend generation credits. `check:launch` deliberately reports pre-release blockers; configuration presence is not external verification.
+The current suite has 105 passing tests, including PostgreSQL fixtures, provider ownership, deduplication, quotes/reservations, billing fixtures and cloud revision/recovery checks. Tests use mocked providers and do not spend generation credits. `check:launch` deliberately reports pre-release blockers; configuration presence is not external verification.
 
 ## Boundaries
 
