@@ -29,3 +29,7 @@ Target: Best Overall / innovative editing workflow and MiniMax bonus considerati
 ## Revision update
 
 The hosted demo now offers a separate 60-second WAYLIGHT recut and the product walkthrough. New reference, first/last and last-frame continuation workflows can be downloaded with staged images without paying or signing in. Catalog and automated checks do not imply a successful new paid SDK submission. WAYLIGHT media remains separate from the MIT code license.
+
+## Live reference proof
+
+Two H3 Max multi-reference jobs completed through the official SDK, saved privately and returned automatically as alternate editor takes. The separate WAYLIGHT v006 review cut uses four selected ranges from these takes while preserving v005 and the original assets. Compare, range replacement and undo were exercised in the editor. Quotes totalled $2.10 under a $3 approved ceiling; final provider charges were not independently reconciled. First/last-frame paid results and Stripe membership billing remain unverified.

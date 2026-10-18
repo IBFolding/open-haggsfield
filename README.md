@@ -43,7 +43,7 @@ Standalone hosting: `npm run build`, then `npm start`. Vercel routing is in `ver
 
 New studio jobs use `@comfyorg/sdk/low` (0.5.x), the official Comfy API v2 client. We intentionally use its no-retry transport for paid submissions, with a persisted token as Idempotency-Key and a persisted job receipt. Duplicate-key or network-uncertain outcomes require reconciliation, never a fresh automatic submission. Customer credentials remain per client at a fixed Cloud origin. Existing jobs without a transport marker retain legacy read/download compatibility.
 
-The SDK read and bounded download were checked against an actual completed job and matched the original MP4 bytes. New SDK submissions have automated contract tests, but have not made a paid live submission. Historical paid MiniMax production used the previous direct Cloud transport. Workflows are under `workflows/comfy/`; the studio downloads exact API graphs without generating. Camera presets add visible prompt text, not native camera guarantees.
+The SDK read and bounded download were checked against an actual completed job and matched the original MP4 bytes. Two explicitly budgeted H3 Max multi-reference SDK submissions completed successfully, with verified private Supabase delivery, automatic addition as editor takes and same-token recovery. This used an isolated operator test entitlement; it does not verify Stripe membership billing. Historical MiniMax production used the previous direct Cloud transport. Workflows are under `workflows/comfy/`; the studio downloads exact API graphs without generating. Camera presets add visible prompt text, not native camera guarantees.
 
 ### Reference-driven revisions
 
@@ -51,7 +51,7 @@ The studio supports text, first-image, first/last-frame and multi-reference mode
 
 Download a ZIP with the actual workflow and staged image bytes before signing in. Continue captures the selected clip's last usable frame locally and uses image-to-video; it does not condition on the full video or audio. Write requested changes and constraints explicitly. Originals remain available for comparison and range replacement.
 
-All 11 supported model/mode combinations passed authenticated live catalog validation. New first/last and multi-reference paid submissions remain unverified. These are not masked inpainting or automatic identity guarantees.
+All 11 supported model/mode combinations passed authenticated live catalog validation. H3 Max multi-reference paid submissions and private delivery have a verified two-take proof. First/last-frame paid results remain unverified. These are not masked inpainting or automatic identity guarantees.
 
 Reference: https://docs.comfy.org/development/api-development/sdks
 

@@ -20,7 +20,7 @@ export async function readFrame(file){
 }
 export async function workflowBundle(input,frames){
  const recipe=minimaxTake({...input,seconds:input.duration});const {zipSync,strToU8}=await import('fflate');
- const files={'workflow.api.json':strToU8(JSON.stringify(recipe.workflow,null,2)),'README.txt':strToU8('Open Haggsfield — prepared MiniMax workflow\n\nNo generation was submitted. Extract this ZIP, copy the image files into your ComfyUI input directory, and open workflow.api.json. Review provider pricing before running partner nodes. Comfy Cloud use requires uploading these input files to that workspace.\n\nNew first/last/reference modes are schema-checked, not paid-live verified. Camera directions and preservation instructions are prompt guidance, not guarantees.\n')};
+ const files={'workflow.api.json':strToU8(JSON.stringify(recipe.workflow,null,2)),'README.txt':strToU8('Open Haggsfield — prepared MiniMax workflow\n\nNo generation was submitted. Extract this ZIP, copy the image files into your ComfyUI input directory, and open workflow.api.json. Review provider pricing before running partner nodes. Comfy Cloud use requires uploading these input files to that workspace.\n\nH3 Max reference generation has a verified paid proof. First/last-frame modes are schema-checked; paid results remain unverified. Camera directions and preservation instructions are prompt guidance, not guarantees.\n')};
  for(const {name,file}of frames)files[name]=new Uint8Array(await file.arrayBuffer());
  return new Blob([zipSync(files,{level:0})],{type:'application/zip'});
 }
